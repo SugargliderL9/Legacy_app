@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --liminal-fog: #e8e9ed;
+  --liminal-mist: #d4d6dc;
+  --liminal-stone: #9a9ca6;
+  --liminal-void: #6b6d76;
+  --liminal-shadow: #4a4c54;
+  --liminal-deep: #2d2e33;
+  --liminal-abyss: #1a1b1e;
+  --liminal-glass: rgba(232, 233, 237, 0.6);
+  --liminal-border: rgba(154, 156, 166, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-liminal), ui-monospace, monospace;
+  background: linear-gradient(180deg, var(--liminal-fog) 0%, var(--liminal-mist) 40%, var(--liminal-stone) 100%);
+  min-height: 100vh;
+  color: var(--liminal-deep);
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Liminal panel - frosted, soft */
+.liminal-panel {
+  background: var(--liminal-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--liminal-border);
+  box-shadow: 0 4px 24px rgba(45, 46, 51, 0.08);
+}
+
+.liminal-input {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--liminal-border);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.liminal-input:focus {
+  outline: none;
+  border-color: var(--liminal-void);
+  box-shadow: 0 0 0 3px rgba(107, 109, 118, 0.15);
+}
+
+.liminal-btn {
+  transition: background 0.2s, transform 0.05s;
+}
+
+.liminal-btn:active {
+  transform: scale(0.98);
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+  .table-responsive {
+    display: block;
+  }
+  .table-responsive thead {
+    display: none;
+  }
+  .table-responsive tr {
+    display: block;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    border: 1px solid var(--liminal-border);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.4);
+  }
+  .table-responsive td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+    border: none;
+  }
+  .table-responsive td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--liminal-void);
+    margin-right: 0.5rem;
+  }
+}
+
+/* Tab scroll on small screens */
+.tabs-scroll {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabs-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.tabs-scroll::-webkit-scrollbar-thumb {
+  background: var(--liminal-border);
+  border-radius: 4px;
+}
