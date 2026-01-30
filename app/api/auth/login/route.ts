@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword, createToken, COOKIE_NAME } from "@/lib/auth";
 
+export const runtime = "nodejs";     // 👈 THIS FIXES THE BUILD
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
