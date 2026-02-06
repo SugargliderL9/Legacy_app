@@ -39,7 +39,7 @@ export default function Dashboard({
   }, [onLogout]);
 
   return (
-    <div className="max-w-6xl mx-auto animate-fade-in">
+    <div className="max-w-6xl mx-auto animate-fade-in dashboard-dark">
       {/* HEADER */}
       <header className="
         relative overflow-hidden
@@ -55,10 +55,7 @@ export default function Dashboard({
 
         <div className="flex items-center gap-4">
           <span className="text-sm text-white/80">
-            Usuario:{" "}
-            <strong className="text-white">
-              {user.username}
-            </strong>
+            Usuario: <strong className="text-white">{user.username}</strong>
           </span>
 
           <motion.button
@@ -90,13 +87,13 @@ export default function Dashboard({
               whileTap={{ scale: 0.94 }}
               className="relative px-5 py-2 rounded-2xl text-sm font-medium"
             >
-              {/* NEON GLOW */}
+              {/* GLOW ACTIVO */}
               {isActive && (
                 <motion.span
-                  layoutId="vapor-glow"
+                  layoutId="active-tab-glow"
                   className="
                     absolute -inset-2 rounded-3xl
-                    bg-gradient-to-r from-pink-500/40 via-purple-500/40 to-cyan-400/40
+                    bg-gradient-to-r from-pink-500/50 via-purple-500/50 to-cyan-400/50
                     blur-2xl
                   "
                   animate={{ opacity: [0.6, 1, 0.6] }}
@@ -104,28 +101,26 @@ export default function Dashboard({
                 />
               )}
 
-              {/* GLASS BG */}
-              <motion.span
-                layoutId="vapor-bg"
+              {/* GLASS BUTTON */}
+              <span
                 className={`
                   absolute inset-0 rounded-2xl backdrop-blur-xl border
                   ${
                     isActive
-                      ? "bg-white/20 border-black/40"
-                      : "bg-white/10 border-black/20 hover:bg-white/20"
+                      ? "bg-white/25 border-white/40"
+                      : "bg-white/10 border-white/20 hover:bg-white/20"
                   }
                 `}
-                transition={{ type: "spring", stiffness: 260, damping: 22 }}
               />
 
               {/* TEXT */}
               <span
                 className={`
-                  relative z-10 tracking-wider
+                  relative z-10 tracking-wide
                   ${
                     isActive
-                      ? "text-black drop-shadow"
-                      : "text-white/80"
+                      ? "text-white font-semibold drop-shadow"
+                      : "text-white/70"
                   }
                 `}
               >
