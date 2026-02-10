@@ -49,7 +49,7 @@ export default function ReportsTab() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-base md:text-lg font-bold text-liminal-deep border-b border-liminal-border pb-2">
+      <h2 className="text-base md:text-lg font-bold text-white border-b border-liminal-border pb-2">
         Generación de Reportes
       </h2>
 

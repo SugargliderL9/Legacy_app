@@ -54,7 +54,7 @@ export default function SearchTab() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
-      <h2 className="text-base md:text-lg font-bold text-liminal-deep border-b border-liminal-border pb-2">
+      <h2 className="text-base md:text-lg font-bold text-white  border-b border-liminal-border pb-2">
         Búsqueda Avanzada
       </h2>
 
@@ -135,14 +135,14 @@ export default function SearchTab() {
 
       {/* RESULTADOS */}
       <section>
-        <h3 className="text-sm font-semibold text-liminal-shadow mb-2">
+        <h3 className="text-sm font-semibold text-white mb-2">
           Resultados
         </h3>
 
         <div className="overflow-x-auto rounded-xl border border-liminal-border">
           <table className="table-responsive w-full text-sm">
             <thead>
-              <tr className="bg-liminal-mist/80">
+              <tr className="bg-liminal-mist text-white/80">
                 <th className="text-left p-2 md:p-3">ID</th>
                 <th className="text-left p-2 md:p-3">Título</th>
                 <th className="text-left p-2 md:p-3">Estado</th>

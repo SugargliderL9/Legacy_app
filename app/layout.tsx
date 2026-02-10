@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Mono } from "next/font/google";
 import "./global.css";
+import AnimatedBackground from "@/components/AnimatedBackground";
 
 const spaceMono = Space_Mono({
   weight: ["400", "700"],
@@ -15,12 +16,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="es" className={spaceMono.variable}>
-      <body className="font-liminal antialiased min-h-screen text-[15px]">{children}</body>
+      <body className="font-liminal antialiased min-h-screen text-[15px]">
+        <AnimatedBackground />
+        {children}
+      </body>
     </html>
   );
 }

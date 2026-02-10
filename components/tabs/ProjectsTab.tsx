@@ -103,7 +103,7 @@ export default function ProjectsTab() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-base md:text-lg font-bold text-liminal-deep border-b border-liminal-border pb-2">
+      <h2 className="text-base md:text-lg font-bold text-white  border-b border-liminal-border pb-2">
         Gestión de Proyectos
       </h2>
 
@@ -114,7 +114,7 @@ export default function ProjectsTab() {
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full liminal-input rounded-lg px-3 py-2 text-sm"
+              className="w-full liminal-input rounded-lg px-3 py-2 text-sm" 
             />
           </div>
           <div className="md:col-span-2">
@@ -144,11 +144,11 @@ export default function ProjectsTab() {
       </section>
 
       <section>
-        <h3 className="text-sm font-semibold text-liminal-shadow mb-2">Proyectos</h3>
+        <h3 className="text-sm font-semibold text-white mb-2">Proyectos</h3>
         <div className="overflow-x-auto rounded-xl border border-liminal-border">
           <table className="table-responsive w-full text-sm">
             <thead>
-              <tr className="bg-liminal-mist/80">
+              <tr className="bg-liminal-fog/80 text-white ">
                 <th className="text-left p-2 md:p-3">ID</th>
                 <th className="text-left p-2 md:p-3">Nombre</th>
                 <th className="text-left p-2 md:p-3 hidden md:table-cell">Descripción</th>
@@ -163,9 +163,9 @@ export default function ProjectsTab() {
                     selected?.id === p.id ? "bg-liminal-mist/70" : ""
                   }`}
                 >
-                  <td className="p-2 md:p-3" data-label="ID">{p.id}</td>
-                  <td className="p-2 md:p-3 font-medium" data-label="Nombre">{p.name}</td>
-                  <td className="p-2 md:p-3 hidden md:table-cell" data-label="Descripción">{p.description ?? ""}</td>
+                  <td className="p-2 md:p-3 text-white" data-label="ID">{p.id}</td>
+                  <td className="p-2 md:p-3 font-medium text-white" data-label="Nombre">{p.name}</td>
+                  <td className="p-2 md:p-3 hidden md:table-cell text-white" data-label="Descripción">{p.description ?? ""}</td>
                 </tr>
               ))}
             </tbody>

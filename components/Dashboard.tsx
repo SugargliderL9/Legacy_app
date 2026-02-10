@@ -39,7 +39,7 @@ export default function Dashboard({
   }, [onLogout]);
 
   return (
-    <div className="max-w-6xl mx-auto animate-fade-in dashboard-dark">
+    <div className="max-w-6xl mx-auto animate-fade-in dashboard-dark  ">
       {/* HEADER */}
       <header className="
         relative overflow-hidden

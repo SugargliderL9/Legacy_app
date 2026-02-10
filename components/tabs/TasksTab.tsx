@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import DeleteModal from "@/components/tabs/DeleteModal";
+import TaskLoader from "@/components/TaskLoader";
 
 type Task = {
   id: number;
@@ -17,7 +19,7 @@ type Task = {
   assignedTo: { id: number; username: string } | null;
 };
 
-type Project = { id: number; name: string; description: string };
+type Project = { id: number; name: string };
 type User = { id: number; username: string };
 
 export default function TasksTab() {
@@ -26,6 +28,8 @@ export default function TasksTab() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [showDelete, setShowDelete] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -38,15 +42,8 @@ export default function TasksTab() {
     estimatedHours: "",
   });
 
-  const [stats, setStats] = useState({
-    total: 0,
-    completed: 0,
-    pending: 0,
-    high: 0,
-    overdue: 0,
-  });
+  const today = new Date().toISOString().split("T")[0];
 
-  /* ---------------- LOAD DATA ---------------- */
   const load = useCallback(async () => {
     try {
       const [t, p, u] = await Promise.all([
@@ -66,31 +63,20 @@ export default function TasksTab() {
     load();
   }, [load]);
 
-  /* ---------------- STATS ---------------- */
-  useEffect(() => {
-    const now = new Date();
-    let completed = 0,
-      pending = 0,
-      high = 0,
-      overdue = 0;
-
-    tasks.forEach((t) => {
-      t.status === "Completada" ? completed++ : pending++;
-      if (t.priority === "Alta" || t.priority === "Crítica") high++;
-      if (t.dueDate && t.status !== "Completada" && new Date(t.dueDate) < now)
-        overdue++;
+  const clearForm = () => {
+    setSelectedId(null);
+    setForm({
+      title: "",
+      description: "",
+      status: "Pendiente",
+      priority: "Media",
+      projectId: 0,
+      assignedTo: 0,
+      dueDate: "",
+      estimatedHours: "",
     });
+  };
 
-    setStats({
-      total: tasks.length,
-      completed,
-      pending,
-      high,
-      overdue,
-    });
-  }, [tasks]);
-
-  /* ---------------- SELECT TASK ---------------- */
   const selectTask = (t: Task) => {
     setSelectedId(t.id);
     setForm({
@@ -107,222 +93,325 @@ export default function TasksTab() {
     });
   };
 
+  // -------- ADD TASK --------
+  const add = async () => {
+    if (!form.title.trim()) {
+      alert("El título es requerido");
+      return;
+    }
+
+    const hours = parseFloat(form.estimatedHours);
+    if (!isNaN(hours) && hours < 0) {
+      alert("Las horas no pueden ser negativas");
+      return;
+    }
+
+    if (form.dueDate && form.dueDate < today) {
+      alert("La fecha no puede ser anterior a hoy");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const r = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: form.title.trim(),
+          description: form.description,
+          status: form.status,
+          priority: form.priority,
+          projectId: form.projectId || undefined,
+          assignedTo: form.assignedTo || undefined,
+          dueDate: form.dueDate || undefined,
+          estimatedHours: form.estimatedHours
+            ? parseFloat(form.estimatedHours)
+            : undefined,
+        }),
+      });
+
+      const data = await r.json();
+
+      if (!r.ok) {
+        alert(data.error || "Error al crear tarea");
+        return;
+      }
+
+      await load();
+      clearForm();
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión con el servidor");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // -------- UPDATE TASK --------
+  const update = async () => {
+    if (!selectedId) return;
+
+    const hours = parseFloat(form.estimatedHours);
+    if (!isNaN(hours) && hours < 0) {
+      alert("Las horas no pueden ser negativas");
+      return;
+    }
+
+    if (form.dueDate && form.dueDate < today) {
+      alert("La fecha no puede ser anterior a hoy");
+      return;
+    }
+
+    await fetch(`/api/tasks/${selectedId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: form.title,
+        description: form.description,
+        status: form.status,
+        priority: form.priority,
+        projectId: form.projectId,
+        assignedTo: form.assignedTo,
+        dueDate: form.dueDate,
+        estimatedHours: form.estimatedHours
+          ? parseFloat(form.estimatedHours)
+          : undefined,
+      }),
+    });
+
+    await load();
+    clearForm();
+  };
+
+  const openDelete = () => {
+    if (!selectedId) return;
+    setShowDelete(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedId) return;
+
+    const r = await fetch(`/api/tasks/${selectedId}`, {
+      method: "DELETE",
+    });
+
+    if (r.ok) {
+      await load();
+      clearForm();
+    }
+
+    setShowDelete(false);
+  };
+
   if (loading) {
-    return (
-      <div className="text-white/60 tracking-widest animate-pulse">
-        CARGANDO TAREAS…
-      </div>
-    );
+    return <TaskLoader />;
   }
 
+  const selectedTask = tasks.find((t) => t.id === selectedId);
+
   return (
-    <>
-      {/* BACKGROUND */}
-      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-purple-900/40 via-black to-cyan-900/40" />
+    <div className="space-y-8">
+      <h2 className="text-xl font-bold text-white">
+        Gestión de Tareas
+      </h2>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
-        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-        transition={{ duration: 0.9, ease: "easeOut" }}
-        className="space-y-10"
-      >
-        {/* HEADER */}
-        <motion.h2
-          animate={{ y: [0, -6, 0] }}
-          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-          className="text-xl font-bold text-white tracking-[0.25em]"
-        >
-          GESTIÓN DE TAREAS
-        </motion.h2>
+      {/* FORM */}
+      <div className="relative rounded-3xl p-5 bg-white/10 backdrop-blur-xl border border-white/20">
 
-        {/* FORM */}
-        <motion.div
-          animate={{ y: [0, -8, 0] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="rounded-3xl p-6 bg-white/10 backdrop-blur-xl border border-white/20 space-y-5"
-        >
-          <h3 className="text-xs text-white/60 uppercase tracking-[0.3em]">
-            CREAR / EDITAR
-          </h3>
-
-          {/* FORM GRID */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input
-              placeholder="Título"
-              value={form.title}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, title: e.target.value }))
-              }
-              className="md:col-span-2 vapor-input"
-            />
-
-            <select
-              value={form.status}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, status: e.target.value }))
-              }
-              className="vapor-input"
-            >
-              {["Pendiente", "En Progreso", "Completada"].map((o) => (
-                <option key={o}>{o}</option>
-              ))}
-            </select>
-
-            <textarea
-              rows={2}
-              placeholder="Descripción"
-              value={form.description}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, description: e.target.value }))
-              }
-              className="md:col-span-2 vapor-input resize-none"
-            />
-
-            <select
-              value={form.priority}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, priority: e.target.value }))
-              }
-              className="vapor-input"
-            >
-              {["Baja", "Media", "Alta", "Crítica"].map((o) => (
-                <option key={o}>{o}</option>
-              ))}
-            </select>
-
-            <select
-              value={form.projectId}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  projectId: Number(e.target.value),
-                }))
-              }
-              className="vapor-input"
-            >
-              <option value={0}>— Proyecto —</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={form.assignedTo}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  assignedTo: Number(e.target.value),
-                }))
-              }
-              className="vapor-input"
-            >
-              <option value={0}>Sin asignar</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.username}
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="date"
-              value={form.dueDate}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, dueDate: e.target.value }))
-              }
-              className="vapor-input"
-            />
-
-            <input
-              type="number"
-              placeholder="Horas estimadas"
-              value={form.estimatedHours}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  estimatedHours: e.target.value,
-                }))
-              }
-              className="vapor-input"
-            />
+        {saving && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-3xl bg-black/40 backdrop-blur-sm">
+            <TaskLoader />
           </div>
+        )}
 
-          {/* ACTIONS */}
-          <div className="flex flex-wrap gap-3 pt-4">
-            {[
-              { label: "Agregar", color: "from-cyan-400 to-purple-500" },
-              { label: "Actualizar", color: "from-purple-500 to-pink-500" },
-              { label: "Eliminar", color: "from-red-500 to-pink-600" },
-              { label: "Limpiar", color: "from-white/40 to-white/10" },
-            ].map((b) => (
-              <motion.button
-                key={b.label}
-                whileHover={{
-                  y: -2,
-                  boxShadow: "0 0 25px rgba(236,72,153,0.6)",
-                }}
-                whileTap={{ scale: 0.94 }}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r ${b.color}`}
-              >
-                {b.label}
-              </motion.button>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+          <input
+            placeholder="Título"
+            value={form.title}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, title: e.target.value }))
+            }
+            className="vapor-input col-span-2"
+          />
+
+          <select
+            value={form.status}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, status: e.target.value }))
+            }
+            className="vapor-input"
+          >
+            {["Pendiente", "En Progreso", "Completada"].map((o) => (
+              <option key={o}>{o}</option>
             ))}
-          </div>
-        </motion.div>
+          </select>
 
-        {/* TABLE */}
-        <motion.div
-          animate={{ y: [0, -6, 0] }}
-          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
-          className="rounded-3xl overflow-hidden border border-white/20 backdrop-blur-xl"
-        >
-          <table className="w-full text-sm text-white/90">
-            <thead className="bg-white/10">
-              <tr>
-                <th className="p-3 text-left">ID</th>
-                <th className="p-3 text-left">Título</th>
-                <th className="p-3 text-left hidden sm:table-cell">
-                  Estado
-                </th>
-                <th className="p-3 text-left hidden md:table-cell">
-                  Prioridad
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {tasks.map((t) => (
-                <tr
-                  key={t.id}
-                  onClick={() => selectTask(t)}
-                  className={`cursor-pointer transition-all duration-300 ${
-                    selectedId === t.id
-                      ? "bg-pink-500/20 shadow-[inset_0_0_0_1px_rgba(236,72,153,0.8)]"
-                      : "hover:bg-white/5 hover:backdrop-blur-md"
-                  }`}
-                >
-                  <td className="p-3">{t.id}</td>
-                  <td className="p-3 font-medium">{t.title}</td>
-                  <td className="p-3 hidden sm:table-cell">
-                    {t.status}
-                  </td>
-                  <td className="p-3 hidden md:table-cell">
-                    {t.priority}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </motion.div>
+          <textarea
+            placeholder="Descripción"
+            rows={2}
+            value={form.description}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                description: e.target.value,
+              }))
+            }
+            className="vapor-input col-span-2 resize-none"
+          />
 
-        {/* STATS */}
-        <div className="text-xs text-white/60 tracking-[0.25em] font-mono">
-          TOTAL {stats.total} · OK {stats.completed} · PEND{" "}
-          {stats.pending} · HIGH {stats.high} · LATE{" "}
-          {stats.overdue}
+          <select
+            value={form.priority}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, priority: e.target.value }))
+            }
+            className="vapor-input"
+          >
+            {["Baja", "Media", "Alta", "Crítica"].map((o) => (
+              <option key={o}>{o}</option>
+            ))}
+          </select>
+
+          <select
+            value={form.projectId}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                projectId: parseInt(e.target.value, 10),
+              }))
+            }
+            className="vapor-input"
+          >
+            <option value={0}>Sin proyecto</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={form.assignedTo}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                assignedTo: parseInt(e.target.value, 10),
+              }))
+            }
+            className="vapor-input"
+          >
+            <option value={0}>Sin asignar</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.username}
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="date"
+            min={today}
+            value={form.dueDate}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, dueDate: e.target.value }))
+            }
+            className="vapor-input"
+          />
+
+          <input
+            type="number"
+            min={0}
+            step={0.5}
+            placeholder="Horas estimadas"
+            value={form.estimatedHours}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                estimatedHours: e.target.value,
+              }))
+            }
+            className="vapor-input"
+          />
         </div>
-      </motion.div>
-    </>
+
+        {/* BUTTONS */}
+        <div className="flex gap-3 mt-5 flex-wrap">
+          <motion.button
+            type="button"
+            onClick={add}
+            whileTap={{ scale: 0.95 }}
+            className="vapor-btn"
+          >
+            Agregar
+          </motion.button>
+
+          <motion.button
+            onClick={update}
+            whileTap={{ scale: 0.95 }}
+            className="vapor-btn-secondary"
+          >
+            Actualizar
+          </motion.button>
+
+          <motion.button
+            onClick={openDelete}
+            whileTap={{ scale: 0.95 }}
+            className="vapor-btn-danger"
+          >
+            Eliminar
+          </motion.button>
+
+          <motion.button
+            onClick={clearForm}
+            whileTap={{ scale: 0.95 }}
+            className="vapor-btn-muted"
+          >
+            Limpiar
+          </motion.button>
+        </div>
+      </div>
+
+      {/* TABLE */}
+      <div className="rounded-3xl overflow-hidden border border-white/20">
+        <table className="w-full text-sm text-white/90">
+          <thead className="bg-white/10">
+            <tr>
+              <th className="p-3 text-left">ID</th>
+              <th className="p-3 text-left">Título</th>
+              <th className="p-3 text-left">Estado</th>
+              <th className="p-3 text-left">Proyecto</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tasks.map((t) => (
+              <tr
+                key={t.id}
+                onClick={() => selectTask(t)}
+                className={`cursor-pointer transition ${
+                  selectedId === t.id
+                    ? "bg-pink-500/20"
+                    : "hover:bg-white/10"
+                }`}
+              >
+                <td className="p-3">{t.id}</td>
+                <td className="p-3">{t.title}</td>
+                <td className="p-3">{t.status}</td>
+                <td className="p-3">
+                  {t.project?.name ?? "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <DeleteModal
+        open={showDelete}
+        title={selectedTask?.title ?? ""}
+        onCancel={() => setShowDelete(false)}
+        onConfirm={confirmDelete}
+      />
+    </div>
   );
 }
